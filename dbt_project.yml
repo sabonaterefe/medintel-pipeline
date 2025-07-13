@@ -1,0 +1,11 @@
+name: medintel_models
+version: '1.0'
+profile: medintel_models
+
+model-paths: ["dbt/medintel_models/models"]
+analysis-paths: ["dbt/medintel_models/analysis"]
+test-paths: ["dbt/medintel_models/tests"]
+seed-paths: ["dbt/medintel_models/data"]         
+macro-paths: ["dbt/medintel_models/macros"]
+
+clean-targets: ["dbt/medintel_models/target"]    
