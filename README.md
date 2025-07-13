@@ -1,99 +1,87 @@
-MedIntel: ELT Pipeline for Ethiopian Medical Market Intelligence
+## MedIntel: ELT Pipeline for Ethiopian Medical Market Intelligence
 
-Overview MedIntel is a modern ELT pipeline that extracts public Telegram content from Ethiopian medical vendors, transforms it into a queryable PostgreSQL warehouse, and enables insights through enrichment and API layers. It uses dbt for transformation and testing, with support for YOLOv8-based image analysis and FastAPI deployment.
+## Overview
 
-Business Objectives
+MedIntel is a data pipeline designed to extract and transform content from public Telegram channels related to Ethiopian medical vendors. It uses the dbt framework to clean, validate, and document the data before storing it in a PostgreSQL warehouse. Image enrichment and semantic search extensions are planned.
 
-Identify frequently mentioned medical products and vendors
+## Core Objectives
 
-Compare content volume across Telegram channels
+Monitor product mentions and channel activity
 
-Track visual content trends using image flags
+Structure raw message data for analysis
 
-Analyze posting activity over time for market insights
+Validate data integrity using dbt tests
 
-Architecture Flow Telegram → JSON → PostgreSQL → dbt → YOLOv8 → FastAPI → Dagster
+Serve visual proof of dbt setup and lineage
 
-Tools per layer:
+## Project Structure
 
-Extraction: Telethon
+medintel-pipeline/
+├── dbt/
+│   ├── models/
+│   │   ├── staging/
+│   │   │   └── stg_telegram_messages.sql
+│   │   ├── marts/
+│   │   │   ├── fct_messages.sql
+│   │   │   ├── dim_channels.sql
+│   │   │   └── dim_dates.sql
+│   ├── tests/
+│   │   └── long_messages.sql
+│   ├── schema.yml
+│   └── dbt_project.yml
+├── docs/
+│   ├── lineage_graph.png
+│   ├── test_results.png
+│   └── run_summary.md
+All dbt models, tests, and configs are located in the dbt/ folder.  Visual confirmation exists in the docs/ folder.
 
-Loading: Python with psycopg2
+## dbt Implementation Details
 
-Transformation: dbt and PostgreSQL
+Project name: medintel_pipeline
 
-Testing: dbt tests and custom logic
+Profile name: medintel_pipeline — validated with dbt debug
 
-Enrichment: YOLOv8 (prepped)
+Models built: 4 view models (staging and marts)
 
-Serving: FastAPI (planned)
+## Tests implemented: 13 total
 
-Orchestration: Dagster (planned)
+Includes not_null, unique, and a custom content-length check
 
-Project Structure The dbt folder includes all models, tests, sources, and configuration:
+Execution confirmed:
 
-dbt/models/staging: cleans raw messages (stg_telegram_messages.sql)
+dbt run completed successfully
 
-dbt/models/marts: final fact and dimension tables (fct_messages.sql, dim_channels.sql, dim_dates.sql)
+dbt test passed all validations
 
-dbt/tests: all validation tests (long_messages.sql, uniqueness, non-null checks)
+dbt docs generate created model lineage and documentation
 
-dbt/schema.yml: source declarations and field descriptions
+## Evidence of Implementation
 
-dbt_project.yml: updated config matching flattened structure
+See docs/ folder for:
 
-target/: compiled documentation (if included)
+lineage_graph.png — dbt lineage screenshot
 
-Other folders:
+test_results.png — visual of 13/13 test pass summary
 
-scripts/: scraping and loading logic
+run_summary.md — summary of dbt execution and result status
 
-data/: raw and enriched assets
+## Sample Query
 
-api/: FastAPI routes (optional setup)
+sql
+SELECT channel, COUNT(*) 
+FROM staging.fct_messages 
+GROUP BY channel 
+ORDER BY COUNT DESC;
+## Limitations
 
-dags/: Dagster orchestrations (planned)
+Data includes only two channels: lobelia4cosmetics and tikvahpharma
 
-README.md: complete project overview
+YOLOv8 image enrichment is prepared but not yet applied
 
-Usage
+FastAPI serving and Dagster orchestration are planned
 
-Load Telegram data: python scripts/load_to_postgres.py
+Semantic search via ChromaDB is on the roadmap
 
-Run dbt transformations: dbt run
+## Author
 
-Test pipeline validity: dbt test
-
-Generate documentation: dbt docs generate dbt docs serve
-
-dbt Validation Summary
-
-Models: staging, dimensions, fact
-
-Tests:
-
-Unique and not-null on keys
-
-Custom length test (rejects empty/short messages)
-
-Result: 13/13 tests passed
-
-Profile: medintel_pipeline connected and verified
-
-Documentation: lineage and schema served via dbt docs
-
-Example Query Show message counts per channel: SELECT channel, COUNT(*) FROM staging.fct_messages GROUP BY channel ORDER BY COUNT DESC
-
-Limitations & Next Steps
-
-Currently limited to two channels (lobelia4cosmetics, tikvahpharma)
-
-YOLOv8 image enrichment prepared but not applied
-
-FastAPI endpoint not yet deployed
-
-Semantic retrieval via ChromaDB planned
-
-Dagster orchestration to be added
-
-Author Sabona Terefe Machine Learning Engineer — NLP & Semantic Search GitHub: @sabonaterefe
+Sabona Terefe Machine Learning Engineer specializing in NLP and Semantic Search GitHub: @sabonaterefe
