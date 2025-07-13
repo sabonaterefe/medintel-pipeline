@@ -1,0 +1,84 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: telegram_messages
+        description: "Raw scraped messages from public Telegram channels loaded from JSON."
+
+models:
+  - name: stg_telegram_messages
+    description: >
+      Staging model to cast fields, calculate metrics, and prep Telegram data for downstream joins.
+    columns:
+      - name: id
+        description: "Unique Telegram message ID."
+        tests: [not_null, unique]
+
+      - name: channel
+        description: "Source channel of the message."
+        tests: [not_null]
+
+      - name: message_date
+        description: "Datetime of message posting."
+        tests: [not_null]
+
+      - name: message_length
+        description: "Character count of message text."
+
+      - name: has_image
+        description: "Boolean flag for image presence."
+
+      - name: image_path
+        description: "Path to image associated with message."
+
+      - name: text
+        description: "Raw message content from Telegram."
+
+  - name: fct_messages
+    description: >
+      Fact table with one row per Telegram message. Includes enrichment fields and joins to channels and dates.
+    columns:
+      - name: id
+        description: "Primary key for message."
+        tests: [not_null, unique]
+
+      - name: channel
+        description: "Source Telegram channel."
+        tests: [not_null]
+
+      - name: message_date
+        description: "Timestamp of the original message."
+        tests: [not_null]
+
+      - name: message_length
+        description: "Length of the message text."
+
+      - name: has_image
+        description: "Whether the message includes an image."
+
+      - name: image_path
+        description: "Local path to saved image."
+
+      - name: text
+        description: "Original message text."
+
+  - name: dim_channels
+    description: >
+      Dimension table containing metadata for Telegram channels.
+    columns:
+      - name: channel_name
+        description: "Unique name of Telegram channel."
+        tests: [not_null, unique]
+
+      - name: channel_type
+        description: "Optional category label (cosmetic, pharma, distributor)."
+
+  - name: dim_dates
+    description: >
+      Date dimension with standard hierarchy (day, week, month).
+    columns:
+      - name: date
+        description: "Canonical date entry."
+        tests: [not_null, unique]
