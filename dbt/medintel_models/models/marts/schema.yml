@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: fct_messages
+    columns:
+      - name: id
+        tests: [not_null, unique]
+      - name: channel
+        tests: [not_null]
+
+  - name: dim_channels
+    columns:
+      - name: channel_name
+        tests: [not_null, unique]
