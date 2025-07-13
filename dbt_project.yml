@@ -1,11 +1,11 @@
-name: medintel_models
+name: medintel_pipeline
 version: '1.0'
-profile: medintel_models
+profile: medintel_pipeline
 
-model-paths: ["dbt/medintel_models/models"]
-analysis-paths: ["dbt/medintel_models/analysis"]
-test-paths: ["dbt/medintel_models/tests"]
-seed-paths: ["dbt/medintel_models/data"]         
-macro-paths: ["dbt/medintel_models/macros"]
+model-paths: ["dbt/models"]
+analysis-paths: ["dbt/analysis"]
+test-paths: ["dbt/tests"]
+seed-paths: ["dbt/data"]
+macro-paths: ["dbt/macros"]
 
-clean-targets: ["dbt/medintel_models/target"]    
+clean-targets: ["dbt/target"]
