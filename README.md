@@ -1,87 +1,170 @@
 ## MedIntel: ELT Pipeline for Ethiopian Medical Market Intelligence
 
-## Overview
+# Overview
+MedIntel is an end-to-end ELT pipeline that extracts, transforms, enriches, and serves content from public Telegram channels in Ethiopia's medical vendor ecosystem. It combines structured modeling (dbt), image enrichment (YOLOv8), orchestration (Dagster), and RESTful serving (FastAPI), all containerized with Docker for reproducibility.
 
-MedIntel is a data pipeline designed to extract and transform content from public Telegram channels related to Ethiopian medical vendors. It uses the dbt framework to clean, validate, and document the data before storing it in a PostgreSQL warehouse. Image enrichment and semantic search extensions are planned.
+This pipeline is built for monitoring product mentions, visual branding, and channel activity — delivering analytics-ready insights through scheduled jobs and APIs.
 
-## Core Objectives
+# Use Cases
+Monitor top-mentioned products across vendor channels
 
-Monitor product mentions and channel activity
+Extract object types (e.g. pills, vials) from shared images
 
-Structure raw message data for analysis
+Track channel message frequency and volume trends
 
-Validate data integrity using dbt tests
+Provide RESTful access to search and reporting endpoints
 
-Serve visual proof of dbt setup and lineage
-
-## Project Structure
-
+# Architecture Summary
+Layer	Tech Used	Purpose
+ Ingestion	Telethon	Scrape raw messages from Telegram channels
+ Transformation	dbt + PostgreSQL	Clean, validate, and model analytics-ready data
+ Enrichment	YOLOv8 via Ultralytics	Detect medical objects in images
+ Orchestration	Dagster	Manage pipeline DAGs and execution flow
+ Serving	FastAPI	Serve enriched data through REST endpoints
+ Deployment	Docker + Compose	Run multi-container stack for reproducible builds
+ Project Structure
 medintel-pipeline/
+├── dags/                     # Dagster orchestration logic
 ├── dbt/
 │   ├── models/
 │   │   ├── staging/
-│   │   │   └── stg_telegram_messages.sql
 │   │   ├── marts/
 │   │   │   ├── fct_messages.sql
+│   │   │   ├── fct_image_detections.sql ← NEW
 │   │   │   ├── dim_channels.sql
 │   │   │   └── dim_dates.sql
-│   ├── tests/
-│   │   └── long_messages.sql
+│   ├── tests/                # dbt validations
 │   ├── schema.yml
 │   └── dbt_project.yml
-├── docs/
-│   ├── lineage_graph.png
-│   ├── test_results.png
-│   └── run_summary.md
-All dbt models, tests, and configs are located in the dbt/ folder.  Visual confirmation exists in the docs/ folder.
+├── api/
+│   └── main.py               # FastAPI endpoints
+├── scripts/
+│   └── enrich_images.py      # YOLOv8 enrichment logic
+├── docker-compose.yml        # Multi-container stack config
+├── Dockerfile                # Python 3.13 base + pipeline tooling
+├── pyproject.toml            # Dependency metadata
+├── yolov8n.pt                # Pretrained YOLOv8 weights
+├── docs/                     # dbt run evidence
 
-## dbt Implementation Details
+# dbt Implementation
+Profile name: medintel_pipeline
 
-Project name: medintel_pipeline
+# Models:
 
-Profile name: medintel_pipeline — validated with dbt debug
+stg_telegram_messages — raw message staging
 
-Models built: 4 view models (staging and marts)
+fct_messages — cleaned message fact table
 
-## Tests implemented: 13 total
+fct_image_detections — results from YOLO object detection
 
-Includes not_null, unique, and a custom content-length check
+dim_channels, dim_dates — normalization layers
 
-Execution confirmed:
+# Tests:
 
-dbt run completed successfully
+13 total, including not_null, unique, and custom length checks
 
-dbt test passed all validations
+# Confirmed:
 
-dbt docs generate created model lineage and documentation
+dbt run, dbt test, dbt docs generate → 
 
-## Evidence of Implementation
+Image Enrichment via YOLOv8
+Model: yolov8n.pt loaded from Ultralytics
 
-See docs/ folder for:
+Script: scripts/enrich_images.py
 
-lineage_graph.png — dbt lineage screenshot
+Pipeline: triggered via Dagster job run_yolo_enrichment
 
-test_results.png — visual of 13/13 test pass summary
+Output Table: fct_image_detections with:
 
-run_summary.md — summary of dbt execution and result status
+image_id, class_name, confidence, bounding_box
 
-## Sample Query
+# Example query:
 
 sql
-SELECT channel, COUNT(*) 
-FROM staging.fct_messages 
-GROUP BY channel 
+SELECT class_name, COUNT(*) 
+FROM marts.fct_image_detections 
+GROUP BY class_name 
 ORDER BY COUNT DESC;
-## Limitations
+## Dagster Orchestration
+Dagster DAGs run all steps in sequence or on schedule:
 
-Data includes only two channels: lobelia4cosmetics and tikvahpharma
+# text
+Job: scrape_telegram_data
+Job: load_raw_to_postgres
+Job: run_dbt_transformations
+Job: run_yolo_enrichment
+To launch Dagster:
 
-YOLOv8 image enrichment is prepared but not yet applied
 
-FastAPI serving and Dagster orchestration are planned
+docker-compose up dagster
+Visit http://localhost:3000 for job graphs, logs, status.
 
-Semantic search via ChromaDB is on the roadmap
+# FastAPI Serving Layer
+Accessible endpoints:
+
+/api/search/messages?query=aspirin
+
+/api/channels/lobelia4cosmetics/activity
+
+/api/reports/top-products
+
+# Start FastAPI:
+
+bash
+docker-compose up fastapi
+Visit http://localhost:8000 or test with tools like Postman.
+
+# Deployment (Docker Compose)
+Spin up the entire stack:
+
+
+docker-compose build
+docker-compose up
+This initializes:
+
+# Dagster UI on port 3000
+# FastAPI on port 8000
+
+# PostgreSQL on port 5432
+
+Environment variables are pulled from .env.
+
+## How to Use
+Clone the repo:
+
+
+git clone https://github.com/sabonaterefe/medintel-pipeline.git
+cd medintel-pipeline
+Add secrets to .env:
+
+TELEGRAM_API_ID=...
+TELEGRAM_API_HASH=...
+POSTGRES_USER=...
+POSTGRES_PASSWORD=...
+Build containers:
+
+
+docker-compose build
+Run the system:
+
+
+docker-compose up
+Access Dagster UI:
+
+http://localhost:3000
+
+Access FastAPI endpoints:
+
+http://localhost:8000
+
+# Limitations
+Channel scope: only lobelia4cosmetics and tikvahpharma currently monitored
+
+YOLOv8 uses lightweight n model; consider upgrading to m or l for precision
+
+No pagination or authentication on FastAPI endpoints (yet)
+
+Semantic search (e.g. ChromaDB) planned but not integrated
 
 ## Author
-
-Sabona Terefe Machine Learning Engineer specializing in NLP and Semantic Search GitHub: @sabonaterefe
+Sabona Terefe Machine Learning Engineer specializing in NLP, Pipelines & Search GitHub: @sabonaterefe
